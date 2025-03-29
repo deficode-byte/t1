@@ -1,0 +1,66 @@
+# 🔥 NAPALM MODE .HTACCESS 🔥
+# Blocks all forbidden access patterns
+# Tested on Apache 2.4+ - KEEP ALIVE ON
+
+# Nuclear option for directory listing
+Options -Indexes -MultiViews +FollowSymLinks
+
+<FilesMatch "(enc|env|config\.php)">
+    Order Allow,Deny
+    Deny from all
+    ErrorDocument 403 "404 Not Found"
+</FilesMatch>
+
+<FilesMatch "\.(log|bak|tmp)$">
+    Order Allow,Deny
+    Deny from all
+    ErrorDocument 403 "404 Not Found"  # Fake 404 response
+</FilesMatch>
+
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Block wget/curl user agents
+    RewriteCond %{HTTP_USER_AGENT} (wget|curl|python-requests) [NC]
+    RewriteRule .* - [F,L]
+    
+    # Kill image hotlinking
+    RewriteCond %{HTTP_REFERER} !^$
+    RewriteCond %{HTTP_REFERER} !^https?://(www\.)?your-phish-domain\.xyz [NC]
+    RewriteRule \.(jpe?g|png|gif|webp)$ - [NC,F,L]
+    
+    # Block direct access to extensions
+    RewriteRule ^.*\.(env|git|htaccess|md|sql)$ - [F,L]
+</IfModule>
+
+
+
+<Files ~ "^.*\.([Ee][Nn][Vv]|[Gg][Ii][Tt])">
+    Order allow,deny
+    Deny from all
+    Satisfy All
+</Files>
+
+# Protect htaccess itself
+<Files ".htaccess">
+    Require all denied
+</Files>
+
+
+
+ErrorDocument 403 "/404.html"
+ErrorDocument 404 "/404.html"
+ErrorDocument 500 "/404.html"
+
+
+
+<IfModule mod_headers.c>
+    # Burn cookies and disable MIME sniffing
+    Header unset Server
+    Header always unset X-Powered-By
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "DENY"
+    Header set Content-Security-Policy "default-src 'self'; script-src 'none';"
+    Header set Permissions-Policy "geolocation=(), camera=(), microphone=()"
+</IfModule>
